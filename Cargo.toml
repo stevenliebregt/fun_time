@@ -1,0 +1,18 @@
+[package]
+name = "fun_time"
+description = "fun_time is a simple Rust library that allows you to easily time your function calls with a simple attribute!"
+authors = ["Steven Liebregt <stevenliebregt@outlook.com>"]
+version = "0.1.0"
+edition = "2021"
+license-file = "LICENSE"
+
+[dependencies]
+fun_time_derive = { path = "fun_time_derive" }
+log = { version = "0.4.17", optional = true }
+
+[features]
+default = []
+log = ["dep:log", "fun_time_derive/log"]
+
+[dev-dependencies]
+simple_logger = "4.0.0"
