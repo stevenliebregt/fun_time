@@ -5,6 +5,7 @@ authors = ["Steven Liebregt <stevenliebregt@outlook.com>"]
 version = "0.1.0"
 edition = "2021"
 license-file = "LICENSE"
+repository = "https://github.com/stevenliebregt/fun_time"
 
 [dependencies]
 fun_time_derive = { version = "0.1.0", path = "fun_time_derive" }
