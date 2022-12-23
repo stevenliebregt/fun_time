@@ -7,7 +7,7 @@ edition = "2021"
 license-file = "LICENSE"
 
 [dependencies]
-fun_time_derive = { path = "fun_time_derive" }
+fun_time_derive = { version = "0.1.0", path = "fun_time_derive" }
 log = { version = "0.4.17", optional = true }
 
 [features]
