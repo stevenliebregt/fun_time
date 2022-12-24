@@ -2,12 +2,28 @@ use darling::FromMeta;
 use quote::quote;
 use syn::{parse_macro_input, ReturnType};
 
+macro_rules! make_darling_error {
+    ($($arg:tt)*) => {
+        Err(darling::Error::custom(format!($($arg)*)))
+    };
+}
+
+macro_rules! make_compile_error {
+    ($($arg:tt)*) => {
+        quote! { compile_error!($($arg)*) }.into()
+    };
+}
+
+/// Determines when to collect execution time information.
 #[derive(FromMeta)]
 enum When {
+    /// Always collect timing information.
     Always,
+    /// Only collect timing information if `cfg!(debug_assertions)` evaluates to `true`.
     Debug,
 }
 
+/// By default we always collect timing information.
 impl Default for When {
     fn default() -> Self {
         Self::Always
@@ -15,25 +31,36 @@ impl Default for When {
 }
 
 impl When {
-    fn from_lit(literal: syn::LitStr) -> When {
+    /// Parse the [`When`] argument from a given string literal.
+    fn from_lit(literal: syn::LitStr) -> Result<Self, darling::Error> {
         match literal.value().as_str() {
-            "always" => Self::Always,
-            "debug" => Self::Debug,
-            // TODO: Compiler error
-            unsupported => panic!(
+            "always" => Ok(Self::Always),
+            "debug" => Ok(Self::Debug),
+            unsupported => make_darling_error!(
                 "Unsupported value for `when` attribute: {unsupported}. Use one of: always, debug"
             ),
         }
     }
 }
 
+/// Determines how to report the captured execution time information.
+///
+/// It will print both a start and done message.
+/// The format of the start message is: "Starting: YOUR_MESSAGE_HERE"
+/// The format of the done message is: "YOUR_MESSAGE_HERE: Done in ELAPSED_TIME"
+///
+/// The `ELAPSED_TIME` is the debug format of [`std::time::Duration`].
 #[derive(FromMeta)]
 enum Reporting {
+    /// Use a simple `println!` statement to print the information to the `stdout`.
     Println,
+    /// Use the [log](https://crates.io/crates/log) crate to print the information using the
+    /// provided `info!` macro.
     #[cfg(feature = "log")]
     Log,
 }
 
+/// By default we use the simple `println!` to write the reporting info to the `stdout`.
 impl Default for Reporting {
     fn default() -> Self {
         Self::Println
@@ -41,13 +68,13 @@ impl Default for Reporting {
 }
 
 impl Reporting {
-    fn from_lit(literal: syn::LitStr) -> Reporting {
+    /// Parse the [`Reporting`] argument from a given string literal.
+    fn from_lit(literal: syn::LitStr) -> Result<Self, darling::Error> {
         match literal.value().as_str() {
-            "println" => Self::Println,
+            "println" => Ok(Self::Println),
             #[cfg(feature = "log")]
-            "log" => Self::Log,
-            // TODO: Compiler error
-            unsupported => panic!("Unsupported value for `reporting` attribute: {unsupported}. Use one of: println, (only with log feature) log")
+            "log" => Ok(Self::Log),
+            unsupported => make_darling_error!("Unsupported value for `reporting` attribute: {unsupported}. Use one of: println, (only with log feature) log")
         }
     }
 }
@@ -58,17 +85,72 @@ struct FunTimeArgs {
     message: Option<String>,
     /// Determines when we should perform the timing.
     #[darling(default)]
-    #[darling(map = "When::from_lit")]
+    #[darling(and_then = "When::from_lit")]
     when: When,
     /// Determines whether the elapsed time should be returned or that we log it immediately
     /// to stdout.
     #[darling(default)]
     give_back: bool,
     #[darling(default)]
-    #[darling(map = "Reporting::from_lit")]
+    #[darling(and_then = "Reporting::from_lit")]
     reporting: Reporting,
 }
 
+/// Measure the execution times of the function under the attribute.
+///
+/// It does this by wrapping the function in a new block surrounded by a [`std::time::Instant::now()`]
+/// call and a [`std::time::Instant::elapsed()`] call. It then either logs the duration directly or
+/// returns it with the original functions return value, depending on how you configured this
+/// attribute.
+///
+/// # Attributes
+///
+/// ## when
+///
+/// The `when` attribute can be used to configure when the timing information is collected. For
+/// example, with `"always"` the timing information is always collected, but with `"debug"` the
+/// timing information is only collected if the `cfg!(debug_assertions)` statement evaluates to
+/// `true`.
+///
+/// ## give_back
+///
+/// The `give_back` attribute can be used to switch the macro from printing mode to returning the
+/// captured elapsed time together with the original return value of the function. It will modify
+/// the original return value to be a tuple, where the first value is the original return value
+/// and the second value is the elapsed time as a [`std::time::Duration`] struct.
+///
+/// ## message
+///
+/// The `message` attribute allows you to set a message that will be displayed in the case you
+/// chose to let the macro report the elapsed time directly. This message will be shown both in
+/// the start and done messages.
+///
+/// ## reporting
+///
+/// The `reporting` attribute determines how the message and elapsed time will be displayed
+/// directly when you have chosen not to let the macro return the elapsed time to you. By default
+/// it uses a simple `println!` statement, but with the optional `log` feature it will use the
+/// [log](https://crates.io/crates/log) crate to log it using the `info!` macro.
+///
+/// # Example
+///
+/// ```
+/// // Replace this in your code with `use fun_time::fun_time;`
+/// use fun_time_derive::fun_time;
+///
+/// #[fun_time(give_back)]
+/// fn function_with_heavy_calculations(some_data: Vec<i32>) -> bool {
+///     // Big brain calculations...
+///     true
+/// }
+///
+/// fn main() {
+///     let my_data = vec![1, 2, 3];
+///
+///     // Run the function and receive timing information
+///     let (my_original_return_value, how_long_did_it_take) = function_with_heavy_calculations(my_data);
+/// }
+/// ```
 #[proc_macro_attribute]
 pub fn fun_time(
     args: proc_macro::TokenStream,
@@ -81,28 +163,22 @@ pub fn fun_time(
     };
 
     if args.message.is_some() && args.give_back {
-        return quote! { compile_error!("the `message` and `give_back` attributes are exclusive!") }
-            .into();
+        return make_compile_error!(
+            "the `message` and `give_back` attributes can not be used together!"
+        );
     }
 
     let item_fn: syn::ItemFn = parse_macro_input!(item as syn::ItemFn);
 
     // Check if we should time the function
     match args.when {
+        When::Debug if args.give_back => return make_compile_error!("the `give_back` and `when` attribute with `\"debug\"` can not be used together! It would result in different return types"),
         When::Debug if !cfg!(debug_assertions) => return quote! { #item_fn }.into(),
         _ => {} // No restrictions, go ahead!
     }
 
-    // Deconstruct the signature
     let visibility = item_fn.vis;
-    let syn::Signature {
-        ident,
-        generics,
-        inputs,
-        output,
-        ..
-    } = item_fn.sig;
-    let where_clause = &generics.where_clause;
+    let signature = item_fn.sig;
 
     // Contains the original logic of the function
     let block = item_fn.block;
@@ -119,6 +195,16 @@ pub fn fun_time(
 
     // Depending on our `give_back` attibute we either return the elapsed time or not
     let tokens = if args.give_back {
+        // Deconstruct the signature because we need to edit the return type
+        let syn::Signature {
+            ident,
+            generics,
+            inputs,
+            output,
+            ..
+        } = signature;
+        let where_clause = &generics.where_clause;
+
         // Modify our output type to also return a std::time::Duration (our elapsed time)
         // In case of an empty return type we can simply return the std::time::Duration, otherwise
         // we have to wrap it in a tuple.
@@ -126,7 +212,7 @@ pub fn fun_time(
             ReturnType::Default => syn::parse_str::<ReturnType>("-> std::time::Duration").unwrap(),
             ReturnType::Type(_, ty) => syn::parse_str::<ReturnType>(&format!(
                 "-> ({}, std::time::Duration)",
-                quote! { #ty }.to_string()
+                quote! { #ty }
             ))
             .unwrap(),
         };
@@ -139,7 +225,7 @@ pub fn fun_time(
             }
         }
     } else {
-        let message = args.message.unwrap_or_else(String::new);
+        let message = args.message.unwrap_or_default();
 
         let starting_statement = match args.reporting {
             Reporting::Println => quote! {
@@ -162,7 +248,7 @@ pub fn fun_time(
         };
 
         quote! {
-            #visibility fn #ident #generics (#inputs) #output #where_clause {
+            #visibility #signature {
                 #starting_statement
 
                 #wrapped_block

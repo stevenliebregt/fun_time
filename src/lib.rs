@@ -7,7 +7,7 @@ mod tests {
     use std::fmt::Debug;
     use std::time::Duration;
 
-    #[fun_time(when = "debug", give_back)]
+    #[fun_time(give_back)]
     fn dummy_test_function_that_sleeps<'a, T>(borrowed_thing: &'a T) -> &'a T
     where
         T: Debug + Sized,
@@ -19,8 +19,8 @@ mod tests {
         borrowed_thing
     }
 
-    #[fun_time(message = "having fun with log", reporting = "log")]
-    fn have_fun(first: String, second: String) {
+    #[fun_time(when = "debug", message = "having fun with log", reporting = "log")]
+    fn have_fun(_first: String, _second: String) {
         std::thread::sleep(Duration::from_millis(69));
     }
 
