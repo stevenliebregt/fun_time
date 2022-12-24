@@ -8,7 +8,7 @@ fun_time is a simple Rust library that allows you to easily time your function c
 ### Basic example
 
 ```rust
-#[fun_time]
+#[fun_time(message = "Heavy calculations")]
 fn some_cool_function(a_value: String) -> usize {
     a_value.len()
 }
@@ -17,6 +17,8 @@ fn main() {
     let my_value_length = some_cool_function(String::from("Hello, world."));
 }
 ```
+
+The above will print `Starting: Heavy calculations` when the function starts, and `Heavy calculations: Done in <duration>` on completion.
 
 ### Configuration
 
