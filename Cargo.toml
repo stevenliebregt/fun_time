@@ -2,7 +2,7 @@
 name = "fun_time"
 description = "fun_time is a simple Rust library that allows you to easily time your function calls with a simple attribute!"
 authors = ["Steven Liebregt <stevenliebregt@outlook.com>"]
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/stevenliebregt/fun_time"
