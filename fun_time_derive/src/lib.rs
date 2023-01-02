@@ -62,8 +62,14 @@ enum Reporting {
 
 /// By default we use the simple `println!` to write the reporting info to the `stdout`.
 impl Default for Reporting {
+    #[cfg(not(feature = "log"))]
     fn default() -> Self {
         Self::Println
+    }
+
+    #[cfg(feature = "log")]
+    fn default() -> Self {
+        Self::Log
     }
 }
 
@@ -229,11 +235,11 @@ pub fn fun_time(
 
         let starting_statement = match args.reporting {
             Reporting::Println => quote! {
-                println!("Starting: {}", #message);
+                println!("{}", #message);
             },
             #[cfg(feature = "log")]
             Reporting::Log => quote! {
-                log::info!("Starting: {}", #message);
+                log::info!("{}", #message);
             },
         };
 

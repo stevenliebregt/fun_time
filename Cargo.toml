@@ -10,7 +10,7 @@ keywords = ["function", "timing", "execution_time", "measure", "time"]
 categories = ["development-tools::profiling"]
 
 [dependencies]
-fun_time_derive = { version = "0.2.0", path = "fun_time_derive" }
+fun_time_derive = { version = "0.2.1", path = "fun_time_derive" }
 log = { version = "0.4.17", optional = true }
 
 [features]
