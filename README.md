@@ -1,14 +1,14 @@
 # fun_time
 
 [![Crates.io](https://img.shields.io/crates/v/fun_time)](https://crates.io/crates/fun_time)
-[![docs.rs](https://img.shields.io/docsrs/fun_time)](https://docs.rs/fun_time/0.2.0/fun_time/)
+[![docs.rs](https://img.shields.io/docsrs/fun_time)](https://docs.rs/fun_time/0.3.0/fun_time/)
 
 fun_time is a simple Rust library that allows you to easily time your function calls with a simple attribute!
 
 ### Basic example
 
 ```rust
-#[fun_time(message = "Heavy calculations")]
+#[fun_time(message = "Heavy calculations on: {a_value}")]
 fn some_cool_function(a_value: String) -> usize {
     a_value.len()
 }
@@ -18,13 +18,13 @@ fn main() {
 }
 ```
 
-The above will print `Starting: Heavy calculations` when the function starts, and `Heavy calculations: Done in <duration>` on completion.
+The above will print `Starting: Heavy calculations on: Hello, world.` when the function starts, and `Heavy calculations on: Hello, world.: Done in <duration>` on completion.
 
 ### Configuration
 
 There are various attributes that allow you to configure the behavior of the `fun_time` attribute.
 
-- `message` allows you to set a message that will be printed when starting, and when done.
+- `message` allows you to set a message that will be printed when starting, and when done, the message is passed directly to the `format!` macro, so the arguments to the function can be used in the message (provided they have `Debug` or `Display`).
 - `when` allows you to configure when the timing should be collected. The possible values for this are: `"always"` which
   as the name might suggest will always collect timing information, and `"debug"` which will only collect when
   `cfg!(debug_assertions)` evaluates to `true`.

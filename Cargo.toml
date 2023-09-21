@@ -2,7 +2,7 @@
 name = "fun_time"
 description = "fun_time is a simple Rust library that allows you to easily time your function calls with a simple attribute!"
 authors = ["Steven Liebregt <stevenliebregt@outlook.com>"]
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/stevenliebregt/fun_time"
@@ -10,7 +10,7 @@ keywords = ["function", "timing", "execution_time", "measure", "time"]
 categories = ["development-tools::profiling"]
 
 [dependencies]
-fun_time_derive = { version = "0.2.1", path = "fun_time_derive" }
+fun_time_derive = { version = "0.3.0", path = "fun_time_derive" }
 log = { version = "0.4.17", optional = true }
 
 [features]

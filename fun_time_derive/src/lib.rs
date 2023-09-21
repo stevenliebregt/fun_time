@@ -233,28 +233,35 @@ pub fn fun_time(
     } else {
         let message = args.message.unwrap_or_default();
 
+        // Store the message at the top of the function because if the function were to take
+        // ownership of the argument it would be gone by the time we want to print the done message.
+        let message_statement = quote! {
+            let super_secret_variable_that_does_not_clash_message = format!(#message);
+        };
+
         let starting_statement = match args.reporting {
             Reporting::Println => quote! {
-                println!("{}", #message);
+                println!("{}", super_secret_variable_that_does_not_clash_message);
             },
             #[cfg(feature = "log")]
             Reporting::Log => quote! {
-                log::info!("{}", #message);
+                log::info!("{}", super_secret_variable_that_does_not_clash_message);
             },
         };
 
         let reporting_statement = match args.reporting {
             Reporting::Println => quote! {
-                println!("{}: Done in {:.2?}", #message, elapsed);
+                println!("{}: Done in {:.2?}", super_secret_variable_that_does_not_clash_message, elapsed);
             },
             #[cfg(feature = "log")]
             Reporting::Log => quote! {
-                log::info!("{}: Done in {:.2?}", #message, elapsed);
+                log::info!("{}: Done in {:.2?}", super_secret_variable_that_does_not_clash_message, elapsed);
             },
         };
 
         quote! {
             #visibility #signature {
+                #message_statement
                 #starting_statement
 
                 #wrapped_block
