@@ -1,7 +1,7 @@
 # fun_time
 
 [![Crates.io](https://img.shields.io/crates/v/fun_time)](https://crates.io/crates/fun_time)
-[![docs.rs](https://img.shields.io/docsrs/fun_time)](https://docs.rs/fun_time/0.3.0/fun_time/)
+[![docs.rs](https://img.shields.io/docsrs/fun_time)](https://docs.rs/fun_time/0.3.1/fun_time/)
 
 fun_time is a simple Rust library that allows you to easily time your function calls with a simple attribute!
 

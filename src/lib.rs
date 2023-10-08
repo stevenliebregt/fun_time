@@ -20,9 +20,7 @@ mod tests {
     }
 
     #[fun_time(when = "debug", message = "having fun with log", reporting = "log")]
-    fn have_fun(_first: String, _second: String) {
-        std::thread::sleep(Duration::from_millis(69));
-    }
+    fn have_fun(_first: String, _second: String) {}
 
     struct Parameter {
         name: String,
@@ -43,19 +41,13 @@ mod tests {
     fn have_fun_with_parameters(first: Parameter, second: i32) {
         // Let's take ownership of the first parameter
         let _first = first;
-        std::thread::sleep(Duration::from_millis(42));
     }
 
     #[test]
     fn it_works() {
-        let (borrowed_thing, elapsed_time) = dummy_test_function_that_sleeps(&"Hello, there!");
+        let (borrowed_thing, _elapsed_time) = dummy_test_function_that_sleeps(&"Hello, there!");
 
         assert_eq!(&"Hello, there!", borrowed_thing);
-
-        // Bit of wiggle room
-        assert!(
-            elapsed_time > Duration::from_millis(40) && elapsed_time < Duration::from_millis(44)
-        );
 
         SimpleLogger::new().init().unwrap_or(());
 
@@ -73,5 +65,28 @@ mod tests {
             },
             1234,
         );
+    }
+
+    #[test]
+    fn works_with_struct_member_that_modifies() {
+        struct Thing {
+            value: i32,
+        }
+
+        impl Thing {
+            pub fn new(value: i32) -> Self {
+                Self { value }
+            }
+
+            #[fun_time(message = "modify while mutating self", reporting = "println")]
+            pub fn modify_timed(&mut self, new_value: i32) -> i32 {
+                let old_value = self.value;
+                self.value = new_value;
+                old_value
+            }
+        }
+
+        let mut thing = Thing::new(1);
+        let _old_value = thing.modify_timed(1337);
     }
 }

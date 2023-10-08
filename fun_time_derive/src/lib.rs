@@ -193,8 +193,7 @@ pub fn fun_time(
     let wrapped_block = quote! {
         let super_secret_variable_that_does_not_clash_start = std::time::Instant::now();
 
-        let function_block = || { #block };
-        let return_value = function_block();
+        let return_value = #block;
 
         let elapsed = super_secret_variable_that_does_not_clash_start.elapsed();
     };
