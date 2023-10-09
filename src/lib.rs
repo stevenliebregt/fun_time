@@ -37,7 +37,11 @@ mod tests {
         }
     }
 
-    #[fun_time(message = "having fun with parameters: {first:#?} and {second}")]
+    #[fun_time(
+        message = "having fun with parameters: {first:#?} and {second}",
+        level = "debug",
+        reporting = "log"
+    )]
     fn have_fun_with_parameters(first: Parameter, second: i32) {
         // Let's take ownership of the first parameter
         let _first = first;

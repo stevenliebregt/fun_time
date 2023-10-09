@@ -85,6 +85,33 @@ impl Reporting {
     }
 }
 
+#[cfg(feature = "log")]
+mod log_level {
+    use super::*;
+    use std::str::FromStr;
+
+    pub struct Level(pub log::Level);
+
+    impl FromMeta for Level {}
+
+    impl Default for Level {
+        fn default() -> Self {
+            Self(log::Level::Info)
+        }
+    }
+
+    impl Level {
+        pub fn from_lit(literal: syn::LitStr) -> Result<Self, darling::Error> {
+            Ok(Self(log::Level::from_str(&literal.value()).map_err(|_| {
+                darling::Error::custom(format!(
+                    "Unsupported value for `level` attribute: {unsupported}. Use one of: trace, debug, info, warn, error",
+                    unsupported = literal.value()
+                ))
+            })?))
+        }
+    }
+}
+
 #[derive(FromMeta)]
 struct FunTimeArgs {
     #[darling(default)]
@@ -100,6 +127,11 @@ struct FunTimeArgs {
     #[darling(default)]
     #[darling(and_then = "Reporting::from_lit")]
     reporting: Reporting,
+
+    #[cfg(feature = "log")]
+    #[darling(default)]
+    #[darling(and_then = "log_level::Level::from_lit")]
+    level: log_level::Level,
 }
 
 /// Measure the execution times of the function under the attribute.
@@ -198,6 +230,16 @@ pub fn fun_time(
         let elapsed = super_secret_variable_that_does_not_clash_start.elapsed();
     };
 
+    // Create tokens for the `log` call if it is enabled
+    #[cfg(feature = "log")]
+    let log_tokens = match args.level.0 {
+        log::Level::Error => quote! { log::error! },
+        log::Level::Warn => quote! { log::warn! },
+        log::Level::Info => quote! { log::info! },
+        log::Level::Debug => quote! { log::debug! },
+        log::Level::Trace => quote! { log::trace! },
+    };
+
     // Depending on our `give_back` attibute we either return the elapsed time or not
     let tokens = if args.give_back {
         // Deconstruct the signature because we need to edit the return type
@@ -219,7 +261,7 @@ pub fn fun_time(
                 "-> ({}, std::time::Duration)",
                 quote! { #ty }
             ))
-            .unwrap(),
+                .unwrap(),
         };
 
         quote! {
@@ -244,7 +286,7 @@ pub fn fun_time(
             },
             #[cfg(feature = "log")]
             Reporting::Log => quote! {
-                log::info!("{}", super_secret_variable_that_does_not_clash_message);
+                #log_tokens("{}", super_secret_variable_that_does_not_clash_message);
             },
         };
 
@@ -254,7 +296,7 @@ pub fn fun_time(
             },
             #[cfg(feature = "log")]
             Reporting::Log => quote! {
-                log::info!("{}: Done in {:.2?}", super_secret_variable_that_does_not_clash_message, elapsed);
+                #log_tokens("{}: Done in {:.2?}", super_secret_variable_that_does_not_clash_message, elapsed);
             },
         };
 

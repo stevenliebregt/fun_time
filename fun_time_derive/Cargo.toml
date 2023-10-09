@@ -17,7 +17,8 @@ darling = "0.14.2"
 proc-macro2 = "1.0.47"
 quote = "1.0.21"
 syn = { version = "1.0.103", features = ["full", "extra-traits"] }
+log = { version = "0.4.17", optional = true }
 
 [features]
 default = []
-log = []
+log = ["dep:log"]

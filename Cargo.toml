@@ -18,4 +18,4 @@ default = []
 log = ["dep:log", "fun_time_derive/log"]
 
 [dev-dependencies]
-simple_logger = "4.0.0"
+simple_logger = "4.2.0"
