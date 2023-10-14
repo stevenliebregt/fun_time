@@ -2,7 +2,7 @@
 name = "fun_time_derive"
 description = "The macro implementations of fun_time"
 authors = ["Steven Liebregt <stevenliebregt@outlook.com>"]
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/stevenliebregt/fun_time"
