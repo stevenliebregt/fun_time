@@ -233,7 +233,7 @@ pub fn fun_time(
 
         // Immediately invoked closure so a `return` statement in the original function does not
         // break the logging. This also works with self-mutating structs.
-        let return_value: #return_type = (|| { #block })();
+        let return_value: #return_type = (|| #block)();
 
         let elapsed = super_secret_variable_that_does_not_clash_start.elapsed();
     };
