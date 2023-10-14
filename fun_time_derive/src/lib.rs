@@ -225,7 +225,9 @@ pub fn fun_time(
     let wrapped_block = quote! {
         let super_secret_variable_that_does_not_clash_start = std::time::Instant::now();
 
-        let return_value = #block;
+        // Immediately invoked closure so a `return` statement in the original function does not
+        // break the logging. This also works with self-mutating structs.
+        let return_value = (|| { #block })();
 
         let elapsed = super_secret_variable_that_does_not_clash_start.elapsed();
     };
