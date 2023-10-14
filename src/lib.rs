@@ -93,4 +93,47 @@ mod tests {
         let mut thing = Thing::new(1);
         let _old_value = thing.modify_timed(1337);
     }
+
+    #[test]
+    fn works_with_traits() {
+        trait MyTrait {
+            fn speak(&self) -> &'static str;
+        }
+
+        struct A {}
+        impl MyTrait for A {
+            fn speak(&self) -> &'static str {
+                "I am: A"
+            }
+        }
+
+        struct B {}
+        impl MyTrait for B {
+            fn speak(&self) -> &'static str {
+                "I am: B"
+            }
+        }
+
+        #[derive(Debug)]
+        enum MyEnum {
+            A,
+            B,
+        }
+
+        impl MyEnum {
+            #[fun_time(message = "Getting trait item for: {self:?}")]
+            fn get_trait_item(&self) -> Box<dyn MyTrait> {
+                match self {
+                    Self::A => Box::new(A {}),
+                    Self::B => Box::new(B {}),
+                }
+            }
+        }
+
+        let enum_a = MyEnum::A;
+        let _ = enum_a.get_trait_item().speak();
+
+        let enum_b = MyEnum::B;
+        let _ = enum_b.get_trait_item().speak();
+    }
 }

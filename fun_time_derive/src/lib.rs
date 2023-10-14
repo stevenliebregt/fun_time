@@ -217,12 +217,7 @@ pub fn fun_time(
 
     let visibility = item_fn.vis;
     let signature = item_fn.sig.clone();
-
-    // Store original return type to support functions that return for example: `Box<dyn Trait>`
-    let return_type = match item_fn.sig.output {
-        syn::ReturnType::Type(_, ty) => quote!{ #ty },
-        syn::ReturnType::Default => quote!{ () },
-    };
+    let output = item_fn.sig.output;
 
     // Contains the original logic of the function
     let block = item_fn.block;
@@ -233,7 +228,9 @@ pub fn fun_time(
 
         // Immediately invoked closure so a `return` statement in the original function does not
         // break the logging. This also works with self-mutating structs.
-        let return_value: #return_type = (|| #block)();
+        // We also put the original return type as return type for the closure otherwise things like
+        // -> Box<dyn Trait> can not be correctly inferred by the compiler.
+        let return_value = (|| #output #block)();
 
         let elapsed = super_secret_variable_that_does_not_clash_start.elapsed();
     };
